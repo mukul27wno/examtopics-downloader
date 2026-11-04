@@ -48,10 +48,12 @@ func FetchURL(url string, client http.Client) []byte {
 		}
 		resp.Body.Close()
 
-		if resp.StatusCode != http.StatusServiceUnavailable {
-			log.Printf("request failed with status code: %d", resp.StatusCode)
-			return nil
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
+			continue
 		}
+
+		log.Printf("request failed with status code: %d", resp.StatusCode)
+		return nil
 	}
 
 	log.Printf("exhausted retries for URL: %s", url)
