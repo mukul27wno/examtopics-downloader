@@ -137,6 +137,9 @@ func GrepStringFromCache(baseString, searchString string) bool {
 }
 
 func AddToBaseUrl(addString string) string {
+	if strings.HasPrefix(addString, "http") {
+		return addString
+	}
 	return fmt.Sprintf("https://www.examtopics.com%s", addString)
 }
 

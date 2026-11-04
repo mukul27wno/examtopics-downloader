@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,27 +25,38 @@ func getDataFromLink(link string) *models.QuestionData {
 		return nil
 	}
 
-	var allQuestions []string
-	doc.Find("li.multi-choice-item").Each(func(i int, s *goquery.Selection) {
-		allQuestions = append(allQuestions, utils.CleanText(s.Text()))
-	})
-
-	answerText := strings.TrimSpace(doc.Find(".correct-answer").Text())
-	answer := ""
-	if len(answerText) > 0 {
-		answer = string(strings.ReplaceAll(strings.ReplaceAll(answerText, " ", ""), "\n", "")[0])
-	}
+	questionText := utils.CleanText(doc.Find(".question-body .card-text").First().Text())
+	comments := utils.CleanText(doc.Find(".discussion-container").Text())
 
 	return &models.QuestionData{
 		Title:        utils.CleanText(doc.Find("h1").Text()),
-		Header:       strings.ReplaceAll(strings.TrimSpace(doc.Find(".question-discussion-header").Text()), "\t", ""),
-		Content:      utils.CleanText(doc.Find(".card-text").Text()),
-		Questions:    allQuestions,
-		Answer:       answer,
-		Timestamp:    utils.CleanText(doc.Find(".discussion-meta-data > i").Text()),
+		Header:       questionText,
+		Content:      "",
+		Questions:    nil,
+		Answer:       extractSelectedAnswer(comments),
+		Timestamp:    utils.CleanText(doc.Find(".mt-3.pt-1.border-top").First().Text()),
 		QuestionLink: link,
-		Comments:     utils.CleanText(doc.Find(".discussion-container").Text()),
+		Comments:     comments,
 	}
+}
+
+// extractSelectedAnswer returns the most common "Selected Answer: X"
+// found in the discussion comments. Ties keep the first answer seen.
+func extractSelectedAnswer(comments string) string {
+	re := regexp.MustCompile(`Selected Answer:\s*([A-Z]+)`)
+	matches := re.FindAllStringSubmatch(comments, -1)
+
+	counts := map[string]int{}
+	best := ""
+	for _, match := range matches {
+		answer := match[1]
+		counts[answer]++
+		if best == "" || counts[answer] > counts[best] {
+			best = answer
+		}
+	}
+
+	return best
 }
 
 var counter int = 0 //start counter at 1
@@ -135,7 +147,7 @@ func fetchAllPageLinksConcurrently(providerName, grepStr string, numPages, concu
 
 			<-rateLimiter.C
 
-			url := fmt.Sprintf("https://www.examtopics.com/discussions/%s/%d", providerName, i)
+			url := fmt.Sprintf("https://www.examtopics.com/discussions/%s/%d/", providerName, i)
 			results <- getLinksFromPage(url, grepStr)
 			bar.Increment()
 		}(i)
