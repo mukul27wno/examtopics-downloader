@@ -74,7 +74,8 @@ func WriteData(dataList []models.QuestionData, outputPath string, commentBool bo
 		}
 
 		opts := []mdtopdf.RenderOption{
-			mdtopdf.IsHorizontalRuleNewPage(true), // treat --- as new page
+			mdtopdf.IsHorizontalRuleNewPage(true),   // treat --- as new page
+			mdtopdf.WithUnicodeTranslator("cp1252"), // keep curly quotes and dashes readable
 		}
 
 		pdfName := strings.TrimSuffix(outputPath, ".md") + ".pdf"
