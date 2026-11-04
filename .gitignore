@@ -5,3 +5,4 @@ examtopics_output.pdf
 env/
 !examples/*
 .DS_STORE
+output/
