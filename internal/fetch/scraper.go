@@ -14,7 +14,6 @@ import (
 	"examtopics-downloader/internal/models"
 	"examtopics-downloader/internal/utils"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/cheggaaa/pb/v3"
 )
 
